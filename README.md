@@ -1,4 +1,4 @@
-GSCF-PHP-Client
+gscf-PHP-client
 ===============
 
-Object Oriented PHP Client to interface with the Generic Study Capture Framework
+PHP client to interface with the GSCF api
