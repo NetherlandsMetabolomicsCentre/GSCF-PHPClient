@@ -64,7 +64,7 @@ class GSCF {
 		);
 
 		// store serialized data
-		if (is_writable(dirname($tempfile))) {
+		if (is_writable(dirname($tempfile)) || is_writable($tempfile)) {
 			file_put_contents($tempfile,serialize($data));
 		}
 	}
@@ -109,7 +109,10 @@ class GSCF {
 		// determine script path
 		$myPath = $_SERVER['SCRIPT_NAME'];
 
-		// create a device ID based on md5sum and script path
+		// create a device ID based on md5sum and script path and append the username
+		// to make it user specific. This can be important if multiple users will use
+		// this class, as the deviceID is used to lookup the user in subsequent request
+		// to validate the calls through the predicted md5 sums
 		$this->deviceID = md5(sprintf("%s::%s::%s",$mac,$myPath,$this->username));
 	}
 
