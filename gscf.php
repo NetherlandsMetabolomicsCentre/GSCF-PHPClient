@@ -27,7 +27,7 @@ class GSCF {
 	 */
 	public function __construct() {
 		// generate a unique device ID
-		$this->generateDeviceID();
+		//$this->generateDeviceID();
 
 		// and read sequence and token from disk
 		$tempfile = $this->getTempfile();
@@ -55,6 +55,7 @@ class GSCF {
 	 * @void
 	 */
 	public function __destruct() {
+
 		// flush sequence and token to tempfile
 		$tempfile = $this->getTempfile();
 		$data = array(
@@ -63,7 +64,7 @@ class GSCF {
 		);
 
 		// store serialized data
-		if (is_writable($tempfile)) {
+		if (is_writable(dirname($tempfile))) {
 			file_put_contents($tempfile,serialize($data));
 		}
 	}
@@ -109,7 +110,7 @@ class GSCF {
 		$myPath = $_SERVER['SCRIPT_NAME'];
 
 		// create a device ID based on md5sum and script path
-		$this->deviceID = md5(sprintf("%s::%s",$mac,$myPath));
+		$this->deviceID = md5(sprintf("%s::%s::%s",$mac,$myPath,$this->username));
 	}
 
 	/**
@@ -149,6 +150,15 @@ class GSCF {
 	}
 
 	/**
+	 * private getter for the device ID
+	 */
+	private function getDeviceID() {
+		if (!$this->deviceID) $this->generateDeviceID();
+
+		return $this->deviceID;
+	}
+
+	/**
 	 * the gscf url setter
 	 * @param String url - the base url where the gscf instance to interface with is located
 	 * @void
@@ -176,7 +186,7 @@ class GSCF {
 		// define http basic authentication hash
 		$url		= sprintf("%s/%s/authenticate",$this->url,$this->endPoint);
 		$headers	= array(sprintf("Authorization: Basic %s==",base64_encode(sprintf("%s:%s",$this->username,$this->password))));
-		$postFields	= array('deviceID' => $this->deviceID);
+		$postFields	= array('deviceID' => $this->getDeviceID());
 
 		// perform authenticate call
 		$curl	= curl_init();
@@ -224,7 +234,7 @@ class GSCF {
 	 * @return string
 	 */
 	private function getTempfile() {
-		$tempfile = sprintf("/%s/gscf-%s.data",((preg_match("/^win/i",php_uname('s'))) ? 'TEMP' : 'tmp'),$this->deviceID);
+		$tempfile = sprintf("/%s/gscf-%s.data",((preg_match("/^win/i",php_uname('s'))) ? 'TEMP' : 'tmp'),$this->getDeviceID());
 		return $tempfile;
 	}
 
@@ -267,7 +277,7 @@ class GSCF {
 		// define the api url and the initial post variables
 		$url		= sprintf("%s/%s/%s",$this->url,$this->endPoint,$service);
 		$postFields	= array(
-			'deviceID'	=> $this->deviceID,
+			'deviceID'	=> $this->getDeviceID(),
 			'validation'	=> md5(sprintf("%s%d%s",$token,$sequence,$this->apiKey))
 		);
 
@@ -346,17 +356,22 @@ class GSCF {
 		$studies = array();
 
 		// iterate through studies
-		foreach ($rawStudies->{'studies'} as $key=>$rawStudy) {
-			// instantiate a study
-			$study = new GSCFStudy();
-			$study->api = $this;
+		try {
+			foreach ($rawStudies->{'studies'} as $key=>$rawStudy) {
+				// instantiate a study
+				$study = new GSCFStudy();
+				$study->api = $this;
 
-			// and set the variables
-			foreach ($rawStudy as $key=>$val) {
-				$study->$key = $val;
+				// and set the variables
+				foreach ($rawStudy as $key=>$val) {
+					$study->$key = $val;
+				}
+
+				array_push($studies, $study);
 			}
-
-			array_push($studies, $study);
+		} catch (Exception $e) {
+			// just ignore the exception, we have
+			// no studies
 		}
 
 		return $studies;
