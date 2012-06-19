@@ -201,6 +201,10 @@ class GSCF {
 			throw new Exception(sprintf("password for user '%s' is invalid (%s) or user is not authorized to use the api at %s (has ROLE_CLIENT been assigned to the user?",$this->username,str_repeat("*",strlen($this->password)),$this->url));
 		} elseif ($status == 404) {
 			throw new Exception(sprintf("the server appears to be down at %s",$this->url));
+		} elseif ($status == 409) {
+			// decode json
+			$obj	= json_decode($json);
+			throw new Exception(sprintf("%s",$obj->{'error'}));
 		} elseif ($status <> 200) {
 			throw new Exception(sprintf("server replied with an unexpected status code %d",$status));
 		} else {
