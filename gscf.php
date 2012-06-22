@@ -20,26 +20,14 @@ class GSCF {
 	private $deviceID	= "";
 	private $url		= "";
 	private $cache		= array();
+	private $cachePath	= "";
+	private $macAddress	= "";
 
 	/**
 	 * class constructor
 	 * @void
 	 */
 	public function __construct() {
-		// generate a unique device ID
-		//$this->generateDeviceID();
-
-		// and read sequence and token from disk
-		$tempfile = $this->getTempfile();
-		if (is_readable($tempfile)) {
-			// read tempfile
-			$data = unserialize(file_get_contents($tempfile));
-
-			// store data internally
-			$this->token	= $data['token'];
-			$this->sequence	= $data['sequence'];
-		}
-
 		// check if curl is available
 		if (!function_exists("curl_init")) {
 			if (file_exists('/etc/debian_version')) {
@@ -48,6 +36,9 @@ class GSCF {
 				throw new Exception("this class requires curl to be available in php");
 			}
 		}
+
+		// set default cache path
+		$this->cachePath = (preg_match("/^win/i",php_uname('s'))) ? "C:\TEMP" : "/tmp";
 	}
 
 	/**
@@ -55,7 +46,14 @@ class GSCF {
 	 * @void
 	 */
 	public function __destruct() {
+		$this->cacheToDisk();
+	}
 
+	/**
+	 * cache token and sequence to disk
+	 * @void
+	 */
+	private function cacheToDisk() {
 		// flush sequence and token to tempfile
 		$tempfile = $this->getTempfile();
 		$data = array(
@@ -70,41 +68,88 @@ class GSCF {
 	}
 
 	/**
+	 * restore token and sequence from disk
+	 * @return Boolean
+	 */
+	private function restoreFromDisk() {
+		$success = false;
+
+		// read sequence and token from disk
+		$tempfile = $this->getTempfile();
+		if (is_readable($tempfile)) {
+			// read tempfile
+			$data = unserialize(file_get_contents($tempfile));
+
+			if ($data['token'] && $data['sequence']) {
+				// store data internally
+				$this->token	= $data['token'];
+				$this->sequence	= $data['sequence'];
+				$success 	= true;
+			}
+		}
+
+		return $success;
+	}
+
+	/**
 	 * generate a unique device id based on MAC address and script location
 	 * @void
 	 */
 	private function generateDeviceID() {
-		// determine the device ID based on MAC Address
-		$os		= php_uname('s');
-		$hostName	= php_uname('n');
-		$mac		= "";
+		$macAddressCache = sprintf("%s/macaddress.data",$this->cachePath);
 
-		// get MAC Address based on environment
-		if (preg_match("/^win/i",$os)) {
-			// assume Windoze
-			exec('ipconfig /all',$result);
-			$find = "Physical Address";
-		} elseif (preg_match("/^darwin/i",$os)) {
-			// assume Mac
-			exec('/sbin/ifconfig en0',$result);
-			$find = "ether";
-		} else {
-			// assume *nix
-			exec('/sbin/ifconfig eth0',$result);
-			$find = "HWaddr";
-		}
+		// got a mac address?
+		if (!$this->macAddress) {
+			if (file_exists($macAddressCache) && is_readable($macAddressCache)) {
+				// read cache file and de-serialize
+				$data = unserialize(file_get_contents($macAddressCache));
+				$this->macAddress = $data['macAddress'];
+				$mac = $data['macAddress'];
+			} else {
+				// no, get it
+				// determine the device ID based on MAC Address
+				$os		= php_uname('s');
+				$hostName	= php_uname('n');
+				$mac		= "";
 
-		// iterate through results to fetch mac address
-		foreach ($result as $line) {
-			if (preg_match(sprintf("/%s([ |\.|:]+)([0-9abcdef:\-]{17})/i",$find),$line,$matches)) {
-				$mac = strtolower(preg_replace("/-/",":",$matches[2]));
-				break;
+				// get MAC Address based on environment
+				if (preg_match("/^win/i",$os)) {
+					// assume Windoze
+					exec('ipconfig /all',$result);
+					$find = "Physical Address";
+				} elseif (preg_match("/^darwin/i",$os)) {
+					// assume Mac
+					exec('/sbin/ifconfig en0',$result);
+					$find = "ether";
+				} else {
+					// assume *nix
+					exec('/sbin/ifconfig eth0',$result);
+					$find = "HWaddr";
+				}
+	
+				// iterate through results to fetch mac address
+				foreach ($result as $line) {
+					if (preg_match(sprintf("/%s([ |\.|:]+)([0-9abcdef:\-]{17})/i",$find),$line,$matches)) {
+						$mac = strtolower(preg_replace("/-/",":",$matches[2]));
+						break;
+					}
+				}
+
+				// if somehow we do not have a mac address,
+				// use the hostname instead
+				if (!$mac) $mac = $hostName;
+
+				// write the mac address to the cache file
+				if (is_writable(dirname($macAddressCache)) || is_writable($macAddressCache)) {
+					$data = array('macAddress' => $mac);
+
+					// store serialized
+					file_put_contents($macAddressCache,serialize($data));
+				}
 			}
+		} else {
+			$mac = $this->macAddress;
 		}
-
-		// if somehow we do not have a mac address,
-		// use the hostname instead
-		if (!$mac) $mac = $hostName;
 
 		// determine script path
 		$myPath = $_SERVER['SCRIPT_NAME'];
@@ -141,6 +186,15 @@ class GSCF {
 	 */
 	public function apiKey($apiKey) {
 		$this->apiKey = $apiKey;
+	}
+
+	/**
+	 * cache path setter
+	 * @param String cache path
+	 * @void
+	 */
+	public function cachePath($cachePath) {
+		$this->cachePath = $cachePath;
 	}
 
 	/**
@@ -237,7 +291,7 @@ class GSCF {
 	 * @return string
 	 */
 	private function getTempfile() {
-		$tempfile = sprintf("/%s/gscf-%s.data",((preg_match("/^win/i",php_uname('s'))) ? 'TEMP' : 'tmp'),$this->getDeviceID());
+		$tempfile = sprintf("%s/gscf-%s.data",$this->cachePath,$this->getDeviceID());
 		return $tempfile;
 	}
 
@@ -247,7 +301,13 @@ class GSCF {
 	 */
 	private function getSequence() {
 		// authenticate if we do not yet have a sequence
-		if (!$this->sequence) $this->authenticate();
+		if (!$this->sequence) {
+			// try to read sequence (and token) from cache file
+			if (!$this->restoreFromDisk()) {
+				// authenticate to fetch token and sequence
+				$this->authenticate();
+			}
+		}
 
 		// increment sequence
 		$this->sequence++;
@@ -261,7 +321,13 @@ class GSCF {
 	 */
 	private function getToken() {
 		// got a token?
-		if (!$this->token) $this->authenticate();
+		if (!$this->token) {
+			// try to read token (and sequence) from cache file
+			if (!$this->restoreFromDisk()) {
+				// authenticate to fetch token and sequence
+				$this->authenticate();
+			}
+		}
 
 		return $this->token;
 	}

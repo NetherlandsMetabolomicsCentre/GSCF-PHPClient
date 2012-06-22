@@ -29,10 +29,11 @@ require_once("gscf.php");
 // instantiate GSCF class and
 // set api endpoint and credentials
 $gscf = new GSCF();
-$gscf->url('http://studies.mydomain.com');	// set this with the main GSCF URL
+$gscf->cachePath('/tmp');
+$gscf->url('http://studies.mydomain.com');		// set this with the main GSCF URL
 $gscf->username('');				        // set this with the username
 $gscf->password('');				        // set this with the password
-$gscf->apiKey('');				            // set this with the api key for this user
+$gscf->apiKey('');					// set this with the api key for this user
 
 // fetch all readable studies
 $studies = $gscf->getStudies();
