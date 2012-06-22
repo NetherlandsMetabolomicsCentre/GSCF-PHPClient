@@ -29,18 +29,6 @@
  * limitations under the License.
  */
 
-
-/**
- * Example script which pulls (readable) studies and assays
- * from a GSCF instance
- *
- * @author Jeroen Wesbeek <work@osx.eu>
- * @since  20120410
- *
- * $Rev$
- * $Id$
- */
-
 // enable error reporting for debugging
 error_reporting(E_ALL);
 ini_set('display_errors',true);
