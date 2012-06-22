@@ -20,6 +20,7 @@
  * limitations under the License.
  */
 class GSCF {
+	private $version	= "0.1";
 	private $endPoint	= "api";
 	private $apiKey		= "";
 	private $sequence	= 0;
@@ -262,6 +263,7 @@ class GSCF {
 		curl_setopt($curl, CURLOPT_POST, 1);
 		curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
 		curl_setopt($curl, CURLOPT_POSTFIELDS, $postFields);
+		curl_setopt($curl, CURLOPT_USERAGENT, sprintf("GSCF-PHPClient version %s",$this->version));
 
 		// fetch result
 		$json	= curl_exec($curl);
@@ -371,6 +373,7 @@ class GSCF {
 		curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1);
 		curl_setopt($curl, CURLOPT_POST, 1);
 		curl_setopt($curl, CURLOPT_POSTFIELDS, $postFields);
+		curl_setopt($curl, CURLOPT_USERAGENT, sprintf("GSCF-PHPClient version %s",$this->version));
 
 		// execute request
 		$json	= curl_exec($curl);
