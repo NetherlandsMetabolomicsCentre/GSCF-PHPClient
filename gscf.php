@@ -32,6 +32,7 @@ class GSCF {
 	private $cache		= array();
 	private $cachePath	= "";
 	private $macAddress	= "";
+    private $debugging  = true;
 
 	/**
 	 * class constructor
@@ -384,6 +385,18 @@ class GSCF {
 		// close curl
 		curl_close($curl);
 
+        // debugging
+        if ($this->debugging) {
+            printf(">> %s\n", $url);
+            printf("   sequence\t: %d\n", $this->sequence);
+            printf("   %s\n",str_pad("{ arguments }",strlen(sprintf("   sequence\t: %d\n", $this->sequence)),"-", STR_PAD_BOTH));
+            foreach ($postFields as $key=>$value) {
+                printf("   %s\t: %s\n",$key,$value);
+            }
+            printf("<< status: %d\n", $status);
+            printf("   message: %s\n", $json);
+        }
+
 		// check if call was okay
 		if ($status == 401) {
 			// check if this is a retried call
@@ -467,7 +480,7 @@ class GSCF {
 		if (array_key_exists('subjects', $this->cache) &&
 		    array_key_exists($studyToken, $this->cache['subjects']))
 		{
-			$subjects = $this->cache['subjects'][ $studytoken ];
+			$subjects = $this->cache['subjects'][ $studyToken ];
 		} else {
 			$subjects = $this->apiCall('getSubjectsForStudy',array('studyToken'=>$studyToken));
 			$this->cache['subjects'][ $studyToken ] = $subjects;
@@ -596,7 +609,7 @@ class GSCF {
 		if (array_key_exists('measurementData', $this->cache) &&
 		    array_key_exists($assayToken, $this->cache['measurementData']))
 		{
-			$data = $this->cache['measurementData'][ $assaytoken ];
+			$data = $this->cache['measurementData'][ $assayToken ];
 		} else {
 			$data = $this->apiCall('getMeasurementDataForAssay',array('assayToken'=>$assayToken));
 			$this->cache['measurementData'][ $assayToken ] = $data;
@@ -629,11 +642,57 @@ class GSCF {
 
 		return $data;
 	}
+
+    /**
+     * API call to get all modules
+     * @return array
+     */
+    private function APIGetModules() {
+        if (array_key_exists('modules',$this->cache)) {
+            $modules = $this->cache['modules'];
+        } else {
+            $modules = $this->apiCall('getModules',array());
+            $this->cache['modules'] = $modules;
+        }
+
+        return $modules;
+    }
+
+    /**
+     * public call to get all modules
+     * @return object
+     */
+    public function getModules() {
+        return $this->APIGetModules();
+    }
+
+    /**
+     * API call to get all entities
+     * @return array
+     */
+    private function APIGetEntityTypes() {
+        if (array_key_exists('entityTypes',$this->cache)) {
+            $entityTypes = $this->cache['entityTypes'];
+        } else {
+            $entityTypes = $this->apiCall('getEntityTypes',array());
+            $this->cache['entityTypes'] = $entityTypes;
+        }
+
+        return $entityTypes;
+    }
+
+    /**
+     * public call to get all entities
+     * @return object
+     */
+    public function getEntityTypes() {
+        return $this->APIGetEntityTypes();
+    }
 }
 
 /**
  * base wrapper class to encapsulate api results in
- * and allow for an object oriented aproach to fetch
+ * and allow for an object oriented approach to fetch
  * more data
  */
 class GSCFEntity {
