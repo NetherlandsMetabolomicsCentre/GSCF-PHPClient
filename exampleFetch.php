@@ -5,9 +5,9 @@
  *
  * Api docs	: http://studies.dbnp.org/api
  * 
- * Usage	: ./example.php
+ * Usage	: ./exampleFetch.php
  * 			or
- *		  php example.php
+ *		  php exampleFetch.php
  *
  * Note		: the user should have the ROLE_CLIENT defined
  * 		  the api key can be found on the user's profile page

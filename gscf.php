@@ -411,7 +411,7 @@ class GSCF {
 				$this->authenticate();
 	
 				// and retry the api call
-				$this->apiCall($service,$args,true);
+				return $this->apiCall($service,$args,true);
 			}
 		} elseif ($status == 404) {
 			throw new Exception(sprintf("the server appears to be down at %s",$this->url));
@@ -687,6 +687,49 @@ class GSCF {
      */
     public function getEntityTypes() {
         return $this->APIGetEntityTypes();
+    }
+
+    /**
+     * API call to get all templates for a specific entity
+     * @return Object
+     */
+    private function APIGetTemplatesForEntity($entityType) {
+        if (array_key_exists('templates',$this->cache) &&
+            array_key_exists($entityType, $this->cache['templates']))
+        {
+            $templates = $this->cache['templates'][ $entityType ];
+        } else {
+            $templates = $this->apiCall('getTemplatesForEntity',array('entityType'=>$entityType));
+            $this->cache['templates'][ $entityType ] = $templates;
+        }
+
+        return $templates;
+    }
+
+    /**
+     * public call to get all templates for a specific entity
+     * @param string entity type
+     * @return array
+     */
+    public function getTemplatesForEntity($entityType='') {
+        if (!$entityType) {
+            throw new Exception("entitype required, call getEntityTypes to fetch a list of available entity types");
+        }
+
+        $rawTemplates = $this->APIGetTemplatesForEntity($entityType);
+        $templates = array();
+
+        // transform object into array
+        foreach ($rawTemplates->templates as $rawTemplate) {
+            $template = array();
+            foreach ($rawTemplate as $key=>$value) {
+                $template[ $key ] = $value;
+            }
+
+            array_push($templates, $template);
+        }
+
+        return $templates;
     }
 }
 
