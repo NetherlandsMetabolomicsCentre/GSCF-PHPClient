@@ -731,6 +731,16 @@ class GSCF {
 
         return $templates;
     }
+
+    private function APIGetFieldsForEntityWithTemplate($entityType='', $templateToken='') {
+        return $this->apiCall('getFieldsForEntityWithTemplate', array('entityType'=>$entityType,'templateToken'=>$templateToken));
+    }
+
+    public function getFieldsForEntityWithTemplate($entityType='', $templateToken='') {
+        $rawFields = $this->APIGetFieldsForEntityWithTemplate($entityType, $templateToken);
+
+        return $rawFields;
+    }
 }
 
 /**

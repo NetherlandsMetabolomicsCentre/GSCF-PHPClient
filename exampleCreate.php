@@ -58,8 +58,15 @@ $modules = $gscf->getModules();
 print_r($modules);
 
 // get all templates for the different entities
-foreach ($entityTypes as $type) {
-    $templates = $gscf->getTemplatesForEntity($type);
+foreach ($entityTypes as $entityType) {
+    $templates = $gscf->getTemplatesForEntity($entityType);
     print_r($templates);
+
+    // fetch all fields for these templates
+    foreach ($templates as $template) {
+        $templateFields = $gscf->getFieldsForEntityWithTemplate($entityType, $template.token);
+        print "template fields:\n";
+        print_r($templateFields);
+    }
 }
 ?>
