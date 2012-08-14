@@ -64,9 +64,45 @@ foreach ($entityTypes as $entityType) {
 
     // fetch all fields for these templates
     foreach ($templates as $template) {
+        // get entity fields for assay
+//        $entityFields = $gscf->getFieldsForEntity($entityType, "94c7bd33-b2b7-47fa-9a5f-ff4bb29834c2");
+//        print "entity fields for entity 94c7bd33-b2b7-47fa-9a5f-ff4bb29834c2:\n";
+//        print_r($entityFields);
+
+        // get entity fields
+        $entityFields = $gscf->getFieldsForEntity($entityType);
+        print "entity fields:\n";
+        print_r($entityFields);
+
+        // get template fields
         $templateFields = $gscf->getFieldsForEntityWithTemplate($entityType, $template.token);
         print "template fields:\n";
         print_r($templateFields);
     }
 }
+
+/**
+// create a new assay
+$fields = array(
+    'name'      => 'paperclip',
+    'module'    => 'Metabolomics module'
+);
+$gscf->createEntityWithTemplate(
+    'Assay',                                    // entity
+    '3d07deb4-9a39-487c-8415-bd37a25a9adb',     // templateToken
+    $fields,                                    // (template) fields to set
+    array(                                      // relationships
+        'studyToken'    => '5660db19-f19a-4c6c-9a51-d35cc7962a2f'
+    )
+);
+
+// create a new template less assay
+$gscf->createEntity(
+    'Assay',                                    // entity
+    $fields,                                    // fields to set
+    array(                                      // relationships
+        'studyToken'    => '5660db19-f19a-4c6c-9a51-d35cc7962a2f'
+    )
+);
+**/
 ?>

@@ -20,7 +20,7 @@
  * limitations under the License.
  */
 class GSCF {
-	private $version	= "0.1";
+	private $version	= "0.2";
 	private $endPoint	= "api";
 	private $apiKey		= "";
 	private $sequence	= 0;
@@ -364,7 +364,13 @@ class GSCF {
 
 		// add arguments to postfields
 		foreach ($args as $key=>$val) {
-			$postFields[$key] = $val;
+            if (is_array($val)) {
+                foreach ($val as $k=>$v) {
+                    $postFields[$k] = $v;
+                }
+            } else {
+                $postFields[$key] = $val;
+            }
 		}
 
 		// perform api call
@@ -732,6 +738,16 @@ class GSCF {
         return $templates;
     }
 
+    private function APIGetFieldsForEntity($entityType='', $entityToken='') {
+        return $this->apiCall('getFieldsForEntity', array('entityType'=>$entityType, 'entityToken'=>$entityToken));
+    }
+
+    public function getFieldsForEntity($entityType='', $entityToken='') {
+        $rawFields = $this->APIGetFieldsForEntity($entityType, $entityToken);
+
+        return $rawFields;
+    }
+
     private function APIGetFieldsForEntityWithTemplate($entityType='', $templateToken='') {
         return $this->apiCall('getFieldsForEntityWithTemplate', array('entityType'=>$entityType,'templateToken'=>$templateToken));
     }
@@ -740,6 +756,23 @@ class GSCF {
         $rawFields = $this->APIGetFieldsForEntityWithTemplate($entityType, $templateToken);
 
         return $rawFields;
+    }
+
+    public function createEntityWithTemplate($entityType='', $templateToken='', $fields=array(), $relations=array()) {
+        return $this->apiCall('createEntityWithTemplate', array(
+            'entityType'    => $entityType,
+            'templateToken' => $templateToken,
+            'fields'        => $fields,
+            'relations'     => $relations
+        ));
+    }
+
+    public function createEntity($entityType, $fields=array(), $relations=array()) {
+        return $this->apiCall('createEntity', array(
+            'entityType'    => $entityType,
+            'fields'        => $fields,
+            'relations'     => $relations
+        ));
     }
 }
 
